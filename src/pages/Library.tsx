@@ -1,7 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, Download, Share2, Trash2, Video } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Play, Download, Share2, Trash2, Video, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const mockRecordings = [
   {
@@ -10,6 +12,11 @@ const mockRecordings = [
     duration: "45:32",
     thumbnail: "/placeholder.svg",
     date: "Oggi",
+    highlights: [
+      { timestamp: "12:34", note: "Goal fantastico!" },
+      { timestamp: "23:45", note: "Parata incredibile" },
+      { timestamp: "38:12", note: "Calcio di punizione" },
+    ],
   },
   {
     id: 2,
@@ -17,6 +24,10 @@ const mockRecordings = [
     duration: "1:23:15",
     thumbnail: "/placeholder.svg",
     date: "Ieri",
+    highlights: [
+      { timestamp: "5:23", note: "Tripla vincente" },
+      { timestamp: "45:12", note: "Schiacciata" },
+    ],
   },
   {
     id: 3,
@@ -24,17 +35,28 @@ const mockRecordings = [
     duration: "2:15:48",
     thumbnail: "/placeholder.svg",
     date: "3 giorni fa",
+    highlights: [
+      { timestamp: "15:34", note: "Ace perfetto" },
+      { timestamp: "1:05:23", note: "Match point" },
+      { timestamp: "1:45:12", note: "Rovescio vincente" },
+      { timestamp: "2:10:05", note: "Vittoria!" },
+    ],
   },
 ];
 
 const Library = () => {
   const { toast } = useToast();
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const handleAction = (action: string) => {
     toast({
       title: action,
       description: "Funzione in arrivo prossimamente",
     });
+  };
+
+  const toggleExpanded = (id: number) => {
+    setExpandedId(expandedId === id ? null : id);
   };
 
   return (
@@ -73,12 +95,54 @@ const Library = () => {
                   <div className="absolute bottom-2 right-2 bg-black/80 px-2 py-1 rounded text-xs text-white">
                     {recording.duration}
                   </div>
+                  {recording.highlights && recording.highlights.length > 0 && (
+                    <div className="absolute top-2 left-2">
+                      <Badge className="bg-accent text-accent-foreground">
+                        <Star className="w-3 h-3 mr-1 fill-current" />
+                        {recording.highlights.length} highlights
+                      </Badge>
+                    </div>
+                  )}
                 </div>
                 <div className="p-4 space-y-3">
                   <div>
                     <h3 className="font-semibold">{recording.title}</h3>
                     <p className="text-sm text-muted-foreground">{recording.date}</p>
                   </div>
+                  
+                  {recording.highlights && recording.highlights.length > 0 && (
+                    <div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-accent hover:text-accent hover:bg-accent/10"
+                        onClick={() => toggleExpanded(recording.id)}
+                      >
+                        <Star className="w-4 h-4 mr-1" />
+                        {expandedId === recording.id ? "Nascondi" : "Mostra"} Highlights
+                      </Button>
+                      
+                      {expandedId === recording.id && (
+                        <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
+                          {recording.highlights.map((highlight, idx) => (
+                            <div
+                              key={idx}
+                              className="bg-muted/50 p-2 rounded text-sm cursor-pointer hover:bg-muted transition-colors"
+                              onClick={() => handleAction(`Vai a ${highlight.timestamp}`)}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-accent font-semibold">
+                                  {highlight.timestamp}
+                                </span>
+                                <span className="text-foreground">{highlight.note}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
                   <div className="flex gap-2">
                     <Button
                       size="sm"
