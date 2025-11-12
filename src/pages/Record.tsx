@@ -1,39 +1,37 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Video, Circle, Square, Settings, Radio, Star, Play, Pause } from "lucide-react";
+import { Circle, Square, Star, Play, Pause, Volume2, VolumeX, ZoomIn, ZoomOut, Plus, Minus, Clock } from "lucide-react";
 import Scoreboard from "@/components/Scoreboard";
-import HighlightsList, { Highlight } from "@/components/HighlightsList";
+import { Highlight } from "@/components/HighlightsList";
 import { useToast } from "@/hooks/use-toast";
+import { useVideoRecorder } from "@/hooks/useVideoRecorder";
+import MobileSidebar from "@/components/MobileSidebar";
+import CompactHighlights from "@/components/CompactHighlights";
 
 const Record = () => {
-  const [isRecording, setIsRecording] = useState(false);
-  const [isStreaming, setIsStreaming] = useState(false);
   const [showScoreboard, setShowScoreboard] = useState(true);
-  const [isPaused, setIsPaused] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
+  const [showHighlights, setShowHighlights] = useState(true);
   const [highlights, setHighlights] = useState<Highlight[]>([]);
+  const [isMuted, setIsMuted] = useState(false);
+  const [homeScore, setHomeScore] = useState(0);
+  const [awayScore, setAwayScore] = useState(0);
+  const [gameTime, setGameTime] = useState(2635); // 43:35 in seconds
   const { toast } = useToast();
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const {
+    isRecording,
+    isPaused,
+    recordingTime,
+    videoRef,
+    startRecording,
+    pauseRecording,
+    stopRecording,
+    startCamera,
+  } = useVideoRecorder();
 
   useEffect(() => {
-    if (isRecording && !isPaused) {
-      timerRef.current = setInterval(() => {
-        setRecordingTime((prev) => prev + 1);
-      }, 1000);
-    } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    }
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, [isRecording, isPaused]);
+    startCamera();
+  }, [startCamera]);
 
   const formatTime = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
@@ -46,39 +44,29 @@ const Record = () => {
     return `${minutes}:${String(secs).padStart(2, '0')}`;
   };
 
-  const handleRecord = () => {
+  const handleRecord = async () => {
     if (isRecording) {
-      // Stop recording
-      setIsRecording(false);
-      setIsPaused(false);
-      setRecordingTime(0);
+      await stopRecording();
       toast({
         title: "Registrazione terminata",
         description: `Video salvato con ${highlights.length} highlights`,
       });
     } else {
-      // Start recording
-      setIsRecording(true);
-      setHighlights([]);
-      toast({
-        title: "Registrazione avviata",
-        description: "Premi la stella per marcare gli highlights",
-      });
+      const started = await startRecording();
+      if (started) {
+        setHighlights([]);
+        toast({
+          title: "Registrazione avviata",
+          description: "Premi la stella per marcare gli highlights",
+        });
+      }
     }
   };
 
   const handlePause = () => {
-    setIsPaused(!isPaused);
+    pauseRecording();
     toast({
       title: isPaused ? "Registrazione ripresa" : "Registrazione in pausa",
-    });
-  };
-
-  const handleStream = () => {
-    setIsStreaming(!isStreaming);
-    toast({
-      title: isStreaming ? "Streaming terminato" : "Streaming avviato",
-      description: isStreaming ? "Lo streaming è stato interrotto" : "Streaming live in corso...",
     });
   };
 
@@ -106,194 +94,198 @@ const Record = () => {
     });
   };
 
-  const handleDeleteHighlight = (id: string) => {
-    setHighlights((prev) => prev.filter((h) => h.id !== id));
-    toast({
-      title: "Highlight eliminato",
-    });
-  };
-
-  const handleUpdateHighlight = (id: string, note: string) => {
-    setHighlights((prev) =>
-      prev.map((h) => (h.id === id ? { ...h, note } : h))
-    );
-    toast({
-      title: "Nota aggiornata",
-    });
-  };
-
-  const handleExportHighlights = () => {
-    const data = highlights.map((h) => ({
-      timestamp: h.formattedTime,
-      note: h.note || "Nessuna nota",
-    }));
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `highlights-${new Date().toISOString().split("T")[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    toast({
-      title: "Highlights esportati",
-      description: "File JSON scaricato con successo",
-    });
-  };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Video Preview Area */}
-        <Card className="relative aspect-video bg-black rounded-xl overflow-hidden shadow-[var(--shadow-primary)]">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center space-y-4">
-              <Video className="w-16 h-16 text-muted-foreground/50 mx-auto" />
-              <p className="text-muted-foreground">Anteprima video</p>
-              {isRecording && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-center gap-2 text-destructive animate-pulse">
-                    <Circle className="w-3 h-3 fill-current" />
-                    <span className="font-semibold">REC</span>
-                  </div>
-                  <div className="text-white font-mono text-2xl">
-                    {formatTime(recordingTime)}
-                  </div>
-                  {isPaused && (
-                    <div className="text-accent font-semibold">PAUSA</div>
-                  )}
-                </div>
-              )}
-              {isStreaming && (
-                <div className="flex items-center gap-2 text-accent animate-pulse">
-                  <Radio className="w-4 h-4" />
-                  <span className="font-semibold">LIVE</span>
-                </div>
-              )}
-            </div>
-          </div>
+    <div className="fixed inset-0 bg-black overflow-hidden">
+      {/* Mobile Sidebar */}
+      <MobileSidebar 
+        onToggleHighlights={() => setShowHighlights(!showHighlights)}
+        onToggleScoreboard={() => setShowScoreboard(!showScoreboard)}
+      />
+      
+      {/* Main Content Area */}
+      <div className="fixed inset-0 right-20 flex flex-col">
+        {/* Video Preview - Full Screen */}
+        <div className="relative flex-1 bg-black">
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted={isMuted}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
           
           {/* Scoreboard Overlay */}
           {showScoreboard && <Scoreboard />}
-
-          {/* Recording Controls Overlay */}
-          {isRecording && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-              <Button
-                size="lg"
-                onClick={handlePause}
-                variant="secondary"
-                className="shadow-lg"
-              >
-                {isPaused ? (
-                  <>
-                    <Play className="w-4 h-4 mr-2" />
-                    Riprendi
-                  </>
-                ) : (
-                  <>
-                    <Pause className="w-4 h-4 mr-2" />
-                    Pausa
-                  </>
-                )}
-              </Button>
-              <Button
-                size="lg"
-                onClick={handleAddHighlight}
-                className="bg-accent hover:bg-accent/90 shadow-lg"
-                disabled={isPaused}
-              >
-                <Star className="w-4 h-4 mr-2 fill-current" />
-                Segna Highlight
-              </Button>
-            </div>
+          
+          {/* Compact Highlights Overlay */}
+          {showHighlights && isRecording && (
+            <CompactHighlights highlights={highlights} recordingTime={recordingTime} />
           )}
-        </Card>
 
-        {/* Controls */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="p-6">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                  <Video className="w-5 h-5 text-primary" />
-                  Registrazione Locale
-                </h3>
-                <Button
-                  onClick={handleRecord}
-                  variant={isRecording ? "destructive" : "default"}
-                  className="w-full"
-                  size="lg"
-                >
-                  {isRecording ? (
-                    <>
-                      <Square className="w-4 h-4 mr-2" />
-                      Ferma Registrazione
-                    </>
-                  ) : (
-                    <>
-                      <Circle className="w-4 h-4 mr-2" />
-                      Avvia Registrazione
-                    </>
-                  )}
-                </Button>
-              </Card>
+          {/* Zoom Controls - Right Side */}
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2">
+            <Button
+              size="icon"
+              className="w-12 h-12 rounded-xl bg-muted/80 hover:bg-muted text-foreground"
+            >
+              <Plus className="w-6 h-6" />
+            </Button>
+            <div className="w-12 h-32 bg-muted/80 rounded-xl flex items-center justify-center">
+              <div className="h-24 w-1 bg-border rounded-full relative">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-8 bg-foreground rounded-full" />
+              </div>
+            </div>
+            <Button
+              size="icon"
+              className="w-12 h-12 rounded-xl bg-muted/80 hover:bg-muted text-foreground"
+            >
+              <Minus className="w-6 h-6" />
+            </Button>
+          </div>
+        </div>
 
-              <Card className="p-6">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                  <Radio className="w-5 h-5 text-accent" />
-                  Streaming Live
-                </h3>
+        {/* Bottom Controls Panel */}
+        <div className="bg-black border-t border-border/20 pb-safe">
+          {/* Scoreboard Controls */}
+          <div className="flex items-center justify-center gap-4 py-4 border-b border-border/20">
+            {/* Home Team */}
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-white text-xs opacity-70">REAL TUSC</span>
+              <div className="flex items-center gap-2">
                 <Button
-                  onClick={handleStream}
-                  variant={isStreaming ? "destructive" : "default"}
-                  className="w-full bg-accent hover:bg-accent/90"
-                  size="lg"
+                  size="icon"
+                  onClick={() => setHomeScore(Math.max(0, homeScore - 1))}
+                  className="w-10 h-10 rounded-full bg-muted/80 hover:bg-muted text-foreground"
                 >
-                  {isStreaming ? (
-                    <>
-                      <Square className="w-4 h-4 mr-2" />
-                      Ferma Stream
-                    </>
-                  ) : (
-                    <>
-                      <Radio className="w-4 h-4 mr-2" />
-                      Avvia Stream
-                    </>
-                  )}
+                  <Minus className="w-5 h-5" />
                 </Button>
-              </Card>
+                <div className="text-white text-4xl font-bold w-16 text-center">
+                  {homeScore}
+                </div>
+                <Button
+                  size="icon"
+                  onClick={() => setHomeScore(homeScore + 1)}
+                  className="w-16 h-16 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30"
+                >
+                  <Plus className="w-8 h-8" />
+                </Button>
+              </div>
             </div>
 
-            <Card className="p-6">
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <Settings className="w-5 h-5 text-muted-foreground" />
-                Impostazioni Rapide
-              </h3>
-              <Button
-                onClick={() => setShowScoreboard(!showScoreboard)}
-                variant="outline"
-                className="w-full"
-                size="lg"
-              >
-                {showScoreboard ? "Nascondi" : "Mostra"} Tabellone
-              </Button>
-            </Card>
+            {/* Game Timer */}
+            <div className="flex flex-col items-center gap-2">
+              <div className="text-white text-4xl font-bold font-mono">
+                {Math.floor(gameTime / 60)}:{String(gameTime % 60).padStart(2, '0')}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => setGameTime(Math.max(0, gameTime - 1))}
+                  className="bg-muted/80 hover:bg-muted text-foreground text-xs px-3"
+                >
+                  -1s
+                </Button>
+                <Button
+                  size="icon"
+                  className="w-12 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  <Play className="w-5 h-5" />
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setGameTime(gameTime + 1)}
+                  className="bg-muted/80 hover:bg-muted text-foreground text-xs px-3"
+                >
+                  +1s
+                </Button>
+              </div>
+            </div>
+
+            {/* Away Team */}
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-white text-xs opacity-70">TOR3TESTE</span>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="icon"
+                  onClick={() => setAwayScore(awayScore + 1)}
+                  className="w-16 h-16 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30"
+                >
+                  <Plus className="w-8 h-8" />
+                </Button>
+                <div className="text-white text-4xl font-bold w-16 text-center">
+                  {awayScore}
+                </div>
+                <Button
+                  size="icon"
+                  onClick={() => setAwayScore(Math.max(0, awayScore - 1))}
+                  className="w-10 h-10 rounded-full bg-muted/80 hover:bg-muted text-foreground"
+                >
+                  <Minus className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
           </div>
 
-          {/* Highlights Panel */}
-          <HighlightsList
-            highlights={highlights}
-            onDeleteHighlight={handleDeleteHighlight}
-            onUpdateHighlight={handleUpdateHighlight}
-            onExportHighlights={handleExportHighlights}
-            isRecording={isRecording}
-          />
+          {/* Main Control Buttons */}
+          <div className="flex items-center justify-center gap-6 py-6">
+            {/* Audio Toggle */}
+            <Button
+              size="icon"
+              onClick={() => setIsMuted(!isMuted)}
+              className="w-12 h-12 rounded-full bg-muted/80 hover:bg-muted text-foreground"
+            >
+              {isMuted ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
+            </Button>
+
+            {/* Highlight Button */}
+            <Button
+              size="icon"
+              onClick={handleAddHighlight}
+              disabled={!isRecording || isPaused}
+              className="w-20 h-20 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30 disabled:opacity-50"
+            >
+              <Plus className="w-10 h-10" />
+            </Button>
+
+            {/* Record Button */}
+            <Button
+              size="icon"
+              onClick={handleRecord}
+              className={`w-24 h-24 rounded-full shadow-lg ${
+                isRecording
+                  ? "bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                  : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/30"
+              }`}
+            >
+              {isRecording ? (
+                <Square className="w-12 h-12" />
+              ) : (
+                <Circle className="w-12 h-12" />
+              )}
+            </Button>
+
+            {/* Pause Button */}
+            {isRecording && (
+              <Button
+                size="icon"
+                onClick={handlePause}
+                className="w-20 h-20 rounded-full bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg"
+              >
+                {isPaused ? <Play className="w-10 h-10" /> : <Pause className="w-10 h-10" />}
+              </Button>
+            )}
+
+            {/* Star Highlight Button */}
+            <Button
+              size="icon"
+              onClick={handleAddHighlight}
+              disabled={!isRecording || isPaused}
+              className="w-12 h-12 rounded-full bg-accent hover:bg-accent/90 text-accent-foreground disabled:opacity-50"
+            >
+              <Star className="w-6 h-6 fill-current" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>
