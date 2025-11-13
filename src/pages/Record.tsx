@@ -7,23 +7,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useVideoRecorder } from "@/hooks/useVideoRecorder";
 import MobileSidebar from "@/components/MobileSidebar";
 import CompactHighlights from "@/components/CompactHighlights";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SportType, SPORT_PRESETS } from "@/types/sports";
 import { useTeamConfig } from "@/hooks/useTeamConfig";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -43,8 +30,14 @@ const Record = () => {
   const [tempAwayTeamName, setTempAwayTeamName] = useState("TOR3TESTE");
   const [selectedSport, setSelectedSport] = useState<SportType>('calcio');
   const [currentPeriod, setCurrentPeriod] = useState(1);
-  const { toast } = useToast();
-  const { savedConfigs, saveConfig, deleteConfig } = useTeamConfig();
+  const {
+    toast
+  } = useToast();
+  const {
+    savedConfigs,
+    saveConfig,
+    deleteConfig
+  } = useTeamConfig();
   const {
     isRecording,
     isPaused,
@@ -78,20 +71,18 @@ const Record = () => {
       setShowTeamDialog(true);
     }
   };
-
   const handleStartRecordingWithTeams = async () => {
     setHomeTeamName(tempHomeTeamName);
     setAwayTeamName(tempAwayTeamName);
     setShowTeamDialog(false);
-    
+
     // Save configuration
     saveConfig(tempHomeTeamName, tempAwayTeamName, selectedSport);
-    
+
     // Apply sport preset
     const preset = SPORT_PRESETS[selectedSport];
     setGameTime(preset.defaultDuration);
     setCurrentPeriod(1);
-    
     const started = await startRecording();
     if (started) {
       setHighlights([]);
@@ -101,22 +92,19 @@ const Record = () => {
       });
     }
   };
-
   const handleEditTeams = () => {
     setTempHomeTeamName(homeTeamName);
     setTempAwayTeamName(awayTeamName);
     setShowEditDialog(true);
   };
-
   const handleSaveEditedTeams = () => {
     setHomeTeamName(tempHomeTeamName);
     setAwayTeamName(tempAwayTeamName);
     setShowEditDialog(false);
     toast({
-      title: "Nomi squadre aggiornati",
+      title: "Nomi squadre aggiornati"
     });
   };
-
   const handleLoadConfig = (configId: string) => {
     const config = savedConfigs.find(c => c.id === configId);
     if (config) {
@@ -129,11 +117,9 @@ const Record = () => {
       });
     }
   };
-
   const handleScoreChange = (team: 'home' | 'away', increment: boolean) => {
     const preset = SPORT_PRESETS[selectedSport];
     const points = increment ? preset.pointsPerScore : -preset.pointsPerScore;
-    
     if (team === 'home') {
       setHomeScore(Math.max(0, homeScore + points));
     } else {
@@ -192,52 +178,30 @@ const Record = () => {
               </Select>
             </div>
             
-            {savedConfigs.length > 0 && (
-              <div className="grid gap-2">
+            {savedConfigs.length > 0 && <div className="grid gap-2">
                 <Label>Configurazioni Salvate</Label>
                 <ScrollArea className="h-32 rounded-md border p-2">
-                  {savedConfigs.map((config) => (
-                    <div key={config.id} className="flex items-center justify-between py-2 px-2 hover:bg-muted rounded-lg mb-1">
-                      <button
-                        onClick={() => handleLoadConfig(config.id)}
-                        className="flex-1 text-left text-sm"
-                      >
+                  {savedConfigs.map(config => <div key={config.id} className="flex items-center justify-between py-2 px-2 hover:bg-muted rounded-lg mb-1">
+                      <button onClick={() => handleLoadConfig(config.id)} className="flex-1 text-left text-sm">
                         <div className="font-medium">{config.name}</div>
                         <div className="text-xs text-muted-foreground">
                           {SPORT_PRESETS[config.sport].name}
                         </div>
                       </button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        onClick={() => deleteConfig(config.id)}
-                      >
+                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => deleteConfig(config.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                    </div>
-                  ))}
+                    </div>)}
                 </ScrollArea>
-              </div>
-            )}
+              </div>}
 
             <div className="grid gap-2">
               <Label htmlFor="home-team">Squadra Casa</Label>
-              <Input
-                id="home-team"
-                value={tempHomeTeamName}
-                onChange={(e) => setTempHomeTeamName(e.target.value)}
-                placeholder="Nome squadra casa"
-              />
+              <Input id="home-team" value={tempHomeTeamName} onChange={e => setTempHomeTeamName(e.target.value)} placeholder="Nome squadra casa" />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="away-team">Squadra Ospite</Label>
-              <Input
-                id="away-team"
-                value={tempAwayTeamName}
-                onChange={(e) => setTempAwayTeamName(e.target.value)}
-                placeholder="Nome squadra ospite"
-              />
+              <Input id="away-team" value={tempAwayTeamName} onChange={e => setTempAwayTeamName(e.target.value)} placeholder="Nome squadra ospite" />
             </div>
           </div>
           <DialogFooter>
@@ -260,21 +224,11 @@ const Record = () => {
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="edit-home-team">Squadra Casa</Label>
-              <Input
-                id="edit-home-team"
-                value={tempHomeTeamName}
-                onChange={(e) => setTempHomeTeamName(e.target.value)}
-                placeholder="Nome squadra casa"
-              />
+              <Input id="edit-home-team" value={tempHomeTeamName} onChange={e => setTempHomeTeamName(e.target.value)} placeholder="Nome squadra casa" />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="edit-away-team">Squadra Ospite</Label>
-              <Input
-                id="edit-away-team"
-                value={tempAwayTeamName}
-                onChange={(e) => setTempAwayTeamName(e.target.value)}
-                placeholder="Nome squadra ospite"
-              />
+              <Input id="edit-away-team" value={tempAwayTeamName} onChange={e => setTempAwayTeamName(e.target.value)} placeholder="Nome squadra ospite" />
             </div>
           </div>
           <DialogFooter>
@@ -287,19 +241,19 @@ const Record = () => {
       </Dialog>
 
       {/* Mobile Sidebar */}
-      <MobileSidebar onToggleHighlights={() => setShowHighlights(!showHighlights)} onToggleScoreboard={() => setShowScoreboard(!showScoreboard)} />
+      <MobileSidebar onToggleHighlights={() => setShowHighlights(!showHighlights)} onToggleScoreboard={() => setShowScoreboard(!showScoreboard)} className="my-0 px-0 py-[100px]" />
       
       {/* Main Content Area */}
       <div className="fixed inset-0 right-20 flex flex-col">
         {/* Top Left Controls */}
         <div className="absolute top-4 left-4 z-20 flex flex-col gap-3">
           {/* Rec/Live Toggle Buttons */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 my-[50px]">
             <Button onClick={handleRecord} className={`h-14 px-4 rounded-2xl border-2 ${isRecording ? "bg-black/80 border-primary" : "bg-black/60 border-white/20"} backdrop-blur-sm`}>
               <Circle className={`w-8 h-8 mr-2 ${isRecording ? "fill-primary text-primary" : "fill-white/20 text-white/20"}`} />
               <span className="text-white font-semibold text-lg">Rec.</span>
             </Button>
-            <Button className="h-14 px-4 rounded-2xl border-2 bg-black/60 border-white/20 backdrop-blur-sm">
+            <Button className="h-14 px-4 rounded-2xl border-2 bg-black/60 border-white/20 backdrop-blur-sm my-0">
               <Circle className="w-8 h-8 mr-2 fill-white/20 text-white/20" />
               <span className="text-white font-semibold text-lg">Live</span>
             </Button>
@@ -321,11 +275,11 @@ const Record = () => {
             </div>}
 
           {/* Audio Toggle */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 my-[400px] px-[10px] py-0 mx-0">
             <Button size="icon" onClick={() => setIsMuted(!isMuted)} className={`w-14 h-14 rounded-full ${isMuted ? "bg-muted/80" : "bg-primary"} border-2 ${isMuted ? "border-white/20" : "border-primary"}`}>
               {isMuted ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
             </Button>
-            <Button size="icon" className="w-14 h-14 rounded-full bg-muted/80 border-2 border-white/20">
+            <Button size="icon" className="w-14 h-14 rounded-full border-2 border-white/20 bg-red-600 hover:bg-red-500">
               <VolumeX className="w-6 h-6" />
             </Button>
           </div>
@@ -365,16 +319,9 @@ const Record = () => {
             <div className="flex flex-col items-center gap-3">
               <div className="flex items-center gap-2">
                 <span className="text-white text-base font-semibold">{homeTeamName}</span>
-                {isRecording && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-6 w-6 text-white/60 hover:text-white"
-                    onClick={handleEditTeams}
-                  >
+                {isRecording && <Button size="icon" variant="ghost" className="h-6 w-6 text-white/60 hover:text-white" onClick={handleEditTeams}>
                     <Edit2 className="w-4 h-4" />
-                  </Button>
-                )}
+                  </Button>}
               </div>
               <div className="flex items-center gap-3">
                 <Button size="icon" onClick={() => handleScoreChange('home', false)} className="w-14 h-14 rounded-full bg-muted/80 hover:bg-muted text-foreground">
@@ -383,7 +330,7 @@ const Record = () => {
                 <div className="text-white text-5xl font-bold w-20 text-center">
                   {homeScore}
                 </div>
-                <Button size="icon" onClick={() => handleScoreChange('home', true)} className="w-24 h-24 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30">
+                <Button size="icon" onClick={() => handleScoreChange('home', true)} className="w-24 h-24 rounded-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30 text-slate-50">
                   <Plus className="w-12 h-12" />
                 </Button>
               </div>
@@ -411,16 +358,9 @@ const Record = () => {
             <div className="flex flex-col items-center gap-3">
               <div className="flex items-center gap-2">
                 <span className="text-white text-base font-semibold">{awayTeamName}</span>
-                {isRecording && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-6 w-6 text-white/60 hover:text-white"
-                    onClick={handleEditTeams}
-                  >
+                {isRecording && <Button size="icon" variant="ghost" className="h-6 w-6 text-white/60 hover:text-white" onClick={handleEditTeams}>
                     <Edit2 className="w-4 h-4" />
-                  </Button>
-                )}
+                  </Button>}
               </div>
               <div className="flex items-center gap-3">
                 <Button size="icon" onClick={() => handleScoreChange('away', true)} className="w-24 h-24 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30">
