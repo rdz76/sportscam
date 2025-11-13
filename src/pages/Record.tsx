@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Circle, Square, Star, Play, Pause, Volume2, VolumeX, ZoomIn, ZoomOut, Plus, Minus, Clock } from "lucide-react";
+import { Circle, Star, Volume2, VolumeX, Plus, Minus, Clock, Edit2, Save, Trash2 } from "lucide-react";
 import Scoreboard from "@/components/Scoreboard";
 import { Highlight } from "@/components/HighlightsList";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +17,16 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { SportType, SPORT_PRESETS } from "@/types/sports";
+import { useTeamConfig } from "@/hooks/useTeamConfig";
+import { ScrollArea } from "@/components/ui/scroll-area";
 const Record = () => {
   const [showScoreboard, setShowScoreboard] = useState(true);
   const [showHighlights, setShowHighlights] = useState(true);
@@ -26,13 +36,15 @@ const Record = () => {
   const [awayScore, setAwayScore] = useState(0);
   const [gameTime, setGameTime] = useState(2635); // 43:35 in seconds
   const [showTeamDialog, setShowTeamDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [homeTeamName, setHomeTeamName] = useState("REAL TUSC");
   const [awayTeamName, setAwayTeamName] = useState("TOR3TESTE");
   const [tempHomeTeamName, setTempHomeTeamName] = useState("REAL TUSC");
   const [tempAwayTeamName, setTempAwayTeamName] = useState("TOR3TESTE");
-  const {
-    toast
-  } = useToast();
+  const [selectedSport, setSelectedSport] = useState<SportType>('calcio');
+  const [currentPeriod, setCurrentPeriod] = useState(1);
+  const { toast } = useToast();
+  const { savedConfigs, saveConfig, deleteConfig } = useTeamConfig();
   const {
     isRecording,
     isPaused,
@@ -72,6 +84,14 @@ const Record = () => {
     setAwayTeamName(tempAwayTeamName);
     setShowTeamDialog(false);
     
+    // Save configuration
+    saveConfig(tempHomeTeamName, tempAwayTeamName, selectedSport);
+    
+    // Apply sport preset
+    const preset = SPORT_PRESETS[selectedSport];
+    setGameTime(preset.defaultDuration);
+    setCurrentPeriod(1);
+    
     const started = await startRecording();
     if (started) {
       setHighlights([]);
@@ -79,6 +99,45 @@ const Record = () => {
         title: "Registrazione avviata",
         description: "Premi la stella per marcare gli highlights"
       });
+    }
+  };
+
+  const handleEditTeams = () => {
+    setTempHomeTeamName(homeTeamName);
+    setTempAwayTeamName(awayTeamName);
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEditedTeams = () => {
+    setHomeTeamName(tempHomeTeamName);
+    setAwayTeamName(tempAwayTeamName);
+    setShowEditDialog(false);
+    toast({
+      title: "Nomi squadre aggiornati",
+    });
+  };
+
+  const handleLoadConfig = (configId: string) => {
+    const config = savedConfigs.find(c => c.id === configId);
+    if (config) {
+      setTempHomeTeamName(config.homeTeam);
+      setTempAwayTeamName(config.awayTeam);
+      setSelectedSport(config.sport);
+      toast({
+        title: "Configurazione caricata",
+        description: `${config.homeTeam} vs ${config.awayTeam}`
+      });
+    }
+  };
+
+  const handleScoreChange = (team: 'home' | 'away', increment: boolean) => {
+    const preset = SPORT_PRESETS[selectedSport];
+    const points = increment ? preset.pointsPerScore : -preset.pointsPerScore;
+    
+    if (team === 'home') {
+      setHomeScore(Math.max(0, homeScore + points));
+    } else {
+      setAwayScore(Math.max(0, awayScore + points));
     }
   };
   const handlePause = () => {
@@ -109,16 +168,59 @@ const Record = () => {
     });
   };
   return <div className="fixed inset-0 bg-black overflow-hidden">
-      {/* Team Names Dialog */}
+      {/* Team Setup Dialog */}
       <Dialog open={showTeamDialog} onOpenChange={setShowTeamDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Personalizza Squadre</DialogTitle>
+            <DialogTitle>Configurazione Partita</DialogTitle>
             <DialogDescription>
-              Inserisci i nomi delle squadre prima di iniziare la registrazione.
+              Seleziona lo sport e personalizza le squadre
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="sport">Sport</Label>
+              <Select value={selectedSport} onValueChange={(value: SportType) => setSelectedSport(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="calcio">⚽ Calcio</SelectItem>
+                  <SelectItem value="basket">🏀 Basket</SelectItem>
+                  <SelectItem value="pallavolo">🏐 Pallavolo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {savedConfigs.length > 0 && (
+              <div className="grid gap-2">
+                <Label>Configurazioni Salvate</Label>
+                <ScrollArea className="h-32 rounded-md border p-2">
+                  {savedConfigs.map((config) => (
+                    <div key={config.id} className="flex items-center justify-between py-2 px-2 hover:bg-muted rounded-lg mb-1">
+                      <button
+                        onClick={() => handleLoadConfig(config.id)}
+                        className="flex-1 text-left text-sm"
+                      >
+                        <div className="font-medium">{config.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {SPORT_PRESETS[config.sport].name}
+                        </div>
+                      </button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => deleteConfig(config.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </ScrollArea>
+              </div>
+            )}
+
             <div className="grid gap-2">
               <Label htmlFor="home-team">Squadra Casa</Label>
               <Input
@@ -141,6 +243,44 @@ const Record = () => {
           <DialogFooter>
             <Button onClick={handleStartRecordingWithTeams} className="w-full">
               Inizia Registrazione
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Teams Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Modifica Squadre</DialogTitle>
+            <DialogDescription>
+              Aggiorna i nomi delle squadre durante la registrazione
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-home-team">Squadra Casa</Label>
+              <Input
+                id="edit-home-team"
+                value={tempHomeTeamName}
+                onChange={(e) => setTempHomeTeamName(e.target.value)}
+                placeholder="Nome squadra casa"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-away-team">Squadra Ospite</Label>
+              <Input
+                id="edit-away-team"
+                value={tempAwayTeamName}
+                onChange={(e) => setTempAwayTeamName(e.target.value)}
+                placeholder="Nome squadra ospite"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleSaveEditedTeams} className="w-full">
+              <Save className="w-4 h-4 mr-2" />
+              Salva Modifiche
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -223,15 +363,27 @@ const Record = () => {
           <div className="flex items-center justify-center gap-8 py-6">
             {/* Home Team */}
             <div className="flex flex-col items-center gap-3">
-              <span className="text-white text-base font-semibold">{homeTeamName}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-white text-base font-semibold">{homeTeamName}</span>
+                {isRecording && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6 text-white/60 hover:text-white"
+                    onClick={handleEditTeams}
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
               <div className="flex items-center gap-3">
-                <Button size="icon" onClick={() => setHomeScore(Math.max(0, homeScore - 1))} className="w-14 h-14 rounded-full bg-muted/80 hover:bg-muted text-foreground">
+                <Button size="icon" onClick={() => handleScoreChange('home', false)} className="w-14 h-14 rounded-full bg-muted/80 hover:bg-muted text-foreground">
                   <Minus className="w-6 h-6" />
                 </Button>
                 <div className="text-white text-5xl font-bold w-20 text-center">
                   {homeScore}
                 </div>
-                <Button size="icon" onClick={() => setHomeScore(homeScore + 1)} className="w-24 h-24 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30">
+                <Button size="icon" onClick={() => handleScoreChange('home', true)} className="w-24 h-24 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30">
                   <Plus className="w-12 h-12" />
                 </Button>
               </div>
@@ -257,15 +409,27 @@ const Record = () => {
 
             {/* Away Team */}
             <div className="flex flex-col items-center gap-3">
-              <span className="text-white text-base font-semibold">{awayTeamName}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-white text-base font-semibold">{awayTeamName}</span>
+                {isRecording && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6 text-white/60 hover:text-white"
+                    onClick={handleEditTeams}
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
               <div className="flex items-center gap-3">
-                <Button size="icon" onClick={() => setAwayScore(awayScore + 1)} className="w-24 h-24 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30">
+                <Button size="icon" onClick={() => handleScoreChange('away', true)} className="w-24 h-24 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30">
                   <Plus className="w-12 h-12" />
                 </Button>
                 <div className="text-white text-5xl font-bold w-20 text-center">
                   {awayScore}
                 </div>
-                <Button size="icon" onClick={() => setAwayScore(Math.max(0, awayScore - 1))} className="w-14 h-14 rounded-full bg-muted/80 hover:bg-muted text-foreground">
+                <Button size="icon" onClick={() => handleScoreChange('away', false)} className="w-14 h-14 rounded-full bg-muted/80 hover:bg-muted text-foreground">
                   <Minus className="w-6 h-6" />
                 </Button>
               </div>
