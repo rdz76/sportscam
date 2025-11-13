@@ -105,6 +105,77 @@ const Record = () => {
       
       {/* Main Content Area */}
       <div className="fixed inset-0 right-20 flex flex-col">
+        {/* Top Left Controls */}
+        <div className="absolute top-4 left-4 z-20 flex flex-col gap-3">
+          {/* Rec/Live Toggle Buttons */}
+          <div className="flex gap-2">
+            <Button
+              onClick={handleRecord}
+              className={`h-14 px-4 rounded-2xl border-2 ${
+                isRecording
+                  ? "bg-black/80 border-primary"
+                  : "bg-black/60 border-white/20"
+              } backdrop-blur-sm`}
+            >
+              <Circle className={`w-8 h-8 mr-2 ${isRecording ? "fill-primary text-primary" : "fill-white/20 text-white/20"}`} />
+              <span className="text-white font-semibold text-lg">Rec.</span>
+            </Button>
+            <Button
+              className="h-14 px-4 rounded-2xl border-2 bg-black/60 border-white/20 backdrop-blur-sm"
+            >
+              <Circle className="w-8 h-8 mr-2 fill-white/20 text-white/20" />
+              <span className="text-white font-semibold text-lg">Live</span>
+            </Button>
+          </div>
+
+          {/* Logo */}
+          <div className="bg-black/60 backdrop-blur-sm rounded-2xl border border-white/10 p-6 w-64">
+            <div className="text-center">
+              <div className="text-3xl font-bold">
+                <span className="text-white">PIX</span>
+                <span className="text-primary">LIVE</span>
+              </div>
+              <div className="text-white/50 text-xs mt-1">by MOVE'N SEE</div>
+            </div>
+          </div>
+
+          {/* Highlight Box */}
+          {isRecording && highlights.length > 0 && (
+            <div className="bg-black/60 backdrop-blur-sm rounded-2xl border border-white/10 p-6 w-64">
+              <div className="text-white text-center mb-3">
+                Highlight - {formatTime(highlights[highlights.length - 1].timestamp)}
+              </div>
+              <div className="flex justify-center">
+                <Button
+                  size="icon"
+                  className="w-16 h-16 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  <Star className="w-8 h-8" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Audio Toggle */}
+          <div className="flex gap-2">
+            <Button
+              size="icon"
+              onClick={() => setIsMuted(!isMuted)}
+              className={`w-14 h-14 rounded-full ${
+                isMuted ? "bg-muted/80" : "bg-primary"
+              } border-2 ${isMuted ? "border-white/20" : "border-primary"}`}
+            >
+              {isMuted ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
+            </Button>
+            <Button
+              size="icon"
+              className="w-14 h-14 rounded-full bg-muted/80 border-2 border-white/20"
+            >
+              <VolumeX className="w-6 h-6" />
+            </Button>
+          </div>
+        </div>
+
         {/* Video Preview - Full Screen */}
         <div className="relative flex-1 bg-black">
           <video
@@ -117,85 +188,83 @@ const Record = () => {
           
           {/* Scoreboard Overlay */}
           {showScoreboard && <Scoreboard />}
-          
-          {/* Compact Highlights Overlay */}
-          {showHighlights && isRecording && (
-            <CompactHighlights highlights={highlights} recordingTime={recordingTime} />
-          )}
 
           {/* Zoom Controls - Right Side */}
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2">
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-3">
             <Button
               size="icon"
-              className="w-12 h-12 rounded-xl bg-muted/80 hover:bg-muted text-foreground"
+              className="w-16 h-16 rounded-2xl bg-muted/80 hover:bg-muted text-foreground backdrop-blur-sm"
             >
-              <Plus className="w-6 h-6" />
+              <Plus className="w-8 h-8" />
             </Button>
-            <div className="w-12 h-32 bg-muted/80 rounded-xl flex items-center justify-center">
-              <div className="h-24 w-1 bg-border rounded-full relative">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-8 bg-foreground rounded-full" />
+            <div className="w-16 rounded-2xl bg-muted/80 backdrop-blur-sm p-4 flex items-center justify-center">
+              <div className="text-white font-semibold">Zoom</div>
+            </div>
+            <div className="w-16 h-40 bg-muted/80 backdrop-blur-sm rounded-2xl flex items-center justify-center p-2">
+              <div className="h-full w-2 bg-border rounded-full relative">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-10 bg-foreground rounded-full" />
               </div>
             </div>
             <Button
               size="icon"
-              className="w-12 h-12 rounded-xl bg-muted/80 hover:bg-muted text-foreground"
+              className="w-16 h-16 rounded-2xl bg-muted/80 hover:bg-muted text-foreground backdrop-blur-sm"
             >
-              <Minus className="w-6 h-6" />
+              <Minus className="w-8 h-8" />
             </Button>
           </div>
         </div>
 
         {/* Bottom Controls Panel */}
-        <div className="bg-black border-t border-border/20 pb-safe">
+        <div className="bg-black pb-safe">
           {/* Scoreboard Controls */}
-          <div className="flex items-center justify-center gap-4 py-4 border-b border-border/20">
+          <div className="flex items-center justify-center gap-8 py-6">
             {/* Home Team */}
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-white text-xs opacity-70">REAL TUSC</span>
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col items-center gap-3">
+              <span className="text-white text-base font-semibold">REAL TUSC</span>
+              <div className="flex items-center gap-3">
                 <Button
                   size="icon"
                   onClick={() => setHomeScore(Math.max(0, homeScore - 1))}
-                  className="w-10 h-10 rounded-full bg-muted/80 hover:bg-muted text-foreground"
+                  className="w-14 h-14 rounded-full bg-muted/80 hover:bg-muted text-foreground"
                 >
-                  <Minus className="w-5 h-5" />
+                  <Minus className="w-6 h-6" />
                 </Button>
-                <div className="text-white text-4xl font-bold w-16 text-center">
+                <div className="text-white text-5xl font-bold w-20 text-center">
                   {homeScore}
                 </div>
                 <Button
                   size="icon"
                   onClick={() => setHomeScore(homeScore + 1)}
-                  className="w-16 h-16 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30"
+                  className="w-24 h-24 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30"
                 >
-                  <Plus className="w-8 h-8" />
+                  <Plus className="w-12 h-12" />
                 </Button>
               </div>
             </div>
 
             {/* Game Timer */}
-            <div className="flex flex-col items-center gap-2">
-              <div className="text-white text-4xl font-bold font-mono">
+            <div className="flex flex-col items-center gap-3">
+              <div className="text-white text-5xl font-bold font-mono">
                 {Math.floor(gameTime / 60)}:{String(gameTime % 60).padStart(2, '0')}
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <Button
                   size="sm"
                   onClick={() => setGameTime(Math.max(0, gameTime - 1))}
-                  className="bg-muted/80 hover:bg-muted text-foreground text-xs px-3"
+                  className="h-10 px-4 rounded-full bg-muted/80 hover:bg-muted text-foreground text-sm font-semibold"
                 >
                   -1s
                 </Button>
                 <Button
                   size="icon"
-                  className="w-12 h-12 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                  className="w-20 h-20 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30"
                 >
-                  <Play className="w-5 h-5" />
+                  <Clock className="w-8 h-8" />
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => setGameTime(gameTime + 1)}
-                  className="bg-muted/80 hover:bg-muted text-foreground text-xs px-3"
+                  className="h-10 px-4 rounded-full bg-muted/80 hover:bg-muted text-foreground text-sm font-semibold"
                 >
                   +1s
                 </Button>
@@ -203,88 +272,28 @@ const Record = () => {
             </div>
 
             {/* Away Team */}
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-white text-xs opacity-70">TOR3TESTE</span>
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col items-center gap-3">
+              <span className="text-white text-base font-semibold">TOR3TESTE</span>
+              <div className="flex items-center gap-3">
                 <Button
                   size="icon"
                   onClick={() => setAwayScore(awayScore + 1)}
-                  className="w-16 h-16 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30"
+                  className="w-24 h-24 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30"
                 >
-                  <Plus className="w-8 h-8" />
+                  <Plus className="w-12 h-12" />
                 </Button>
-                <div className="text-white text-4xl font-bold w-16 text-center">
+                <div className="text-white text-5xl font-bold w-20 text-center">
                   {awayScore}
                 </div>
                 <Button
                   size="icon"
                   onClick={() => setAwayScore(Math.max(0, awayScore - 1))}
-                  className="w-10 h-10 rounded-full bg-muted/80 hover:bg-muted text-foreground"
+                  className="w-14 h-14 rounded-full bg-muted/80 hover:bg-muted text-foreground"
                 >
-                  <Minus className="w-5 h-5" />
+                  <Minus className="w-6 h-6" />
                 </Button>
               </div>
             </div>
-          </div>
-
-          {/* Main Control Buttons */}
-          <div className="flex items-center justify-center gap-6 py-6">
-            {/* Audio Toggle */}
-            <Button
-              size="icon"
-              onClick={() => setIsMuted(!isMuted)}
-              className="w-12 h-12 rounded-full bg-muted/80 hover:bg-muted text-foreground"
-            >
-              {isMuted ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
-            </Button>
-
-            {/* Highlight Button */}
-            <Button
-              size="icon"
-              onClick={handleAddHighlight}
-              disabled={!isRecording || isPaused}
-              className="w-20 h-20 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30 disabled:opacity-50"
-            >
-              <Plus className="w-10 h-10" />
-            </Button>
-
-            {/* Record Button */}
-            <Button
-              size="icon"
-              onClick={handleRecord}
-              className={`w-24 h-24 rounded-full shadow-lg ${
-                isRecording
-                  ? "bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                  : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/30"
-              }`}
-            >
-              {isRecording ? (
-                <Square className="w-12 h-12" />
-              ) : (
-                <Circle className="w-12 h-12" />
-              )}
-            </Button>
-
-            {/* Pause Button */}
-            {isRecording && (
-              <Button
-                size="icon"
-                onClick={handlePause}
-                className="w-20 h-20 rounded-full bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg"
-              >
-                {isPaused ? <Play className="w-10 h-10" /> : <Pause className="w-10 h-10" />}
-              </Button>
-            )}
-
-            {/* Star Highlight Button */}
-            <Button
-              size="icon"
-              onClick={handleAddHighlight}
-              disabled={!isRecording || isPaused}
-              className="w-12 h-12 rounded-full bg-accent hover:bg-accent/90 text-accent-foreground disabled:opacity-50"
-            >
-              <Star className="w-6 h-6 fill-current" />
-            </Button>
           </div>
         </div>
       </div>
