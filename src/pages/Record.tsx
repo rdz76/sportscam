@@ -7,6 +7,16 @@ import { useToast } from "@/hooks/use-toast";
 import { useVideoRecorder } from "@/hooks/useVideoRecorder";
 import MobileSidebar from "@/components/MobileSidebar";
 import CompactHighlights from "@/components/CompactHighlights";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 const Record = () => {
   const [showScoreboard, setShowScoreboard] = useState(true);
   const [showHighlights, setShowHighlights] = useState(true);
@@ -15,6 +25,11 @@ const Record = () => {
   const [homeScore, setHomeScore] = useState(0);
   const [awayScore, setAwayScore] = useState(0);
   const [gameTime, setGameTime] = useState(2635); // 43:35 in seconds
+  const [showTeamDialog, setShowTeamDialog] = useState(false);
+  const [homeTeamName, setHomeTeamName] = useState("REAL TUSC");
+  const [awayTeamName, setAwayTeamName] = useState("TOR3TESTE");
+  const [tempHomeTeamName, setTempHomeTeamName] = useState("REAL TUSC");
+  const [tempAwayTeamName, setTempAwayTeamName] = useState("TOR3TESTE");
   const {
     toast
   } = useToast();
@@ -48,14 +63,22 @@ const Record = () => {
         description: `Video salvato con ${highlights.length} highlights`
       });
     } else {
-      const started = await startRecording();
-      if (started) {
-        setHighlights([]);
-        toast({
-          title: "Registrazione avviata",
-          description: "Premi la stella per marcare gli highlights"
-        });
-      }
+      setShowTeamDialog(true);
+    }
+  };
+
+  const handleStartRecordingWithTeams = async () => {
+    setHomeTeamName(tempHomeTeamName);
+    setAwayTeamName(tempAwayTeamName);
+    setShowTeamDialog(false);
+    
+    const started = await startRecording();
+    if (started) {
+      setHighlights([]);
+      toast({
+        title: "Registrazione avviata",
+        description: "Premi la stella per marcare gli highlights"
+      });
     }
   };
   const handlePause = () => {
@@ -86,6 +109,43 @@ const Record = () => {
     });
   };
   return <div className="fixed inset-0 bg-black overflow-hidden">
+      {/* Team Names Dialog */}
+      <Dialog open={showTeamDialog} onOpenChange={setShowTeamDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Personalizza Squadre</DialogTitle>
+            <DialogDescription>
+              Inserisci i nomi delle squadre prima di iniziare la registrazione.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="home-team">Squadra Casa</Label>
+              <Input
+                id="home-team"
+                value={tempHomeTeamName}
+                onChange={(e) => setTempHomeTeamName(e.target.value)}
+                placeholder="Nome squadra casa"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="away-team">Squadra Ospite</Label>
+              <Input
+                id="away-team"
+                value={tempAwayTeamName}
+                onChange={(e) => setTempAwayTeamName(e.target.value)}
+                placeholder="Nome squadra ospite"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleStartRecordingWithTeams} className="w-full">
+              Inizia Registrazione
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Mobile Sidebar */}
       <MobileSidebar onToggleHighlights={() => setShowHighlights(!showHighlights)} onToggleScoreboard={() => setShowScoreboard(!showScoreboard)} />
       
@@ -136,7 +196,7 @@ const Record = () => {
           <video ref={videoRef} autoPlay playsInline muted={isMuted} className="absolute inset-0 w-full h-full object-cover" />
           
           {/* Scoreboard Overlay */}
-          {showScoreboard && <Scoreboard />}
+          {showScoreboard && <Scoreboard homeTeam={homeTeamName} awayTeam={awayTeamName} homeScore={homeScore} awayScore={awayScore} minutes={Math.floor(gameTime / 60)} seconds={gameTime % 60} />}
 
           {/* Zoom Controls - Right Side */}
           <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-3">
@@ -163,7 +223,7 @@ const Record = () => {
           <div className="flex items-center justify-center gap-8 py-6">
             {/* Home Team */}
             <div className="flex flex-col items-center gap-3">
-              <span className="text-white text-base font-semibold">REAL TUSC</span>
+              <span className="text-white text-base font-semibold">{homeTeamName}</span>
               <div className="flex items-center gap-3">
                 <Button size="icon" onClick={() => setHomeScore(Math.max(0, homeScore - 1))} className="w-14 h-14 rounded-full bg-muted/80 hover:bg-muted text-foreground">
                   <Minus className="w-6 h-6" />
@@ -197,7 +257,7 @@ const Record = () => {
 
             {/* Away Team */}
             <div className="flex flex-col items-center gap-3">
-              <span className="text-white text-base font-semibold">TOR3TESTE</span>
+              <span className="text-white text-base font-semibold">{awayTeamName}</span>
               <div className="flex items-center gap-3">
                 <Button size="icon" onClick={() => setAwayScore(awayScore + 1)} className="w-24 h-24 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30">
                   <Plus className="w-12 h-12" />
