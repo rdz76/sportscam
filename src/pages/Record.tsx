@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Circle, Star, Volume2, VolumeX, Plus, Minus, Clock, Edit2, Save, Trash2 } from "lucide-react";
+import { Circle, Star, Volume2, VolumeX, Plus, Minus, Clock, Edit2, Save, Trash2, Download } from "lucide-react";
 import Scoreboard from "@/components/Scoreboard";
 import { Highlight } from "@/components/HighlightsList";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +34,8 @@ const Record = () => {
   const [awayLogo, setAwayLogo] = useState<string>("");
   const [tempHomeLogo, setTempHomeLogo] = useState<string>("");
   const [tempAwayLogo, setTempAwayLogo] = useState<string>("");
+  const [recordedVideoBlob, setRecordedVideoBlob] = useState<Blob | null>(null);
+  const [recordedFileName, setRecordedFileName] = useState<string>("");
   const {
     toast
   } = useToast();
@@ -66,7 +68,11 @@ const Record = () => {
   };
   const handleRecord = async () => {
     if (isRecording) {
-      await stopRecording();
+      const recordingData = await stopRecording();
+      if (recordingData?.videoBlob) {
+        setRecordedVideoBlob(recordingData.videoBlob);
+        setRecordedFileName(recordingData.fileName);
+      }
       toast({
         title: "Registrazione terminata",
         description: `Video salvato con ${highlights.length} highlights`
@@ -141,6 +147,101 @@ const Record = () => {
         description: `${config.homeTeam} vs ${config.awayTeam}`
       });
     }
+  };
+  
+  const createWebVTTChapters = (highlights: Highlight[]): string => {
+    let vtt = "WEBVTT\n\n";
+    
+    highlights.forEach((highlight, index) => {
+      const startTime = formatVTTTime(highlight.timestamp);
+      const endTime = index < highlights.length - 1 
+        ? formatVTTTime(highlights[index + 1].timestamp)
+        : formatVTTTime(highlight.timestamp + 30); // 30 seconds default duration
+      
+      const chapterTitle = highlight.note || `Highlight ${index + 1}`;
+      
+      vtt += `${index + 1}\n`;
+      vtt += `${startTime} --> ${endTime}\n`;
+      vtt += `${chapterTitle}\n\n`;
+    });
+    
+    return vtt;
+  };
+  
+  const formatVTTTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    const milliseconds = Math.floor((seconds % 1) * 1000);
+    
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
+  };
+  
+  const handleExportVideo = () => {
+    if (!recordedVideoBlob || highlights.length === 0) {
+      toast({
+        title: "Nessun video da esportare",
+        description: "Completa una registrazione con highlights prima di esportare",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Export video file
+    const videoUrl = URL.createObjectURL(recordedVideoBlob);
+    const videoLink = document.createElement('a');
+    videoLink.href = videoUrl;
+    videoLink.download = recordedFileName;
+    document.body.appendChild(videoLink);
+    videoLink.click();
+    document.body.removeChild(videoLink);
+    URL.revokeObjectURL(videoUrl);
+    
+    // Export WebVTT chapters file
+    const vttContent = createWebVTTChapters(highlights);
+    const vttBlob = new Blob([vttContent], { type: 'text/vtt' });
+    const vttUrl = URL.createObjectURL(vttBlob);
+    const vttLink = document.createElement('a');
+    vttLink.href = vttUrl;
+    vttLink.download = recordedFileName.replace('.webm', '-chapters.vtt');
+    document.body.appendChild(vttLink);
+    vttLink.click();
+    document.body.removeChild(vttLink);
+    URL.revokeObjectURL(vttUrl);
+    
+    // Export JSON metadata file
+    const metadata = {
+      fileName: recordedFileName,
+      sport: selectedSport,
+      homeTeam: homeTeamName,
+      awayTeam: awayTeamName,
+      finalScore: {
+        home: homeScore,
+        away: awayScore
+      },
+      duration: gameTime,
+      highlights: highlights.map(h => ({
+        timestamp: h.timestamp,
+        formattedTime: h.formattedTime,
+        note: h.note
+      })),
+      exportDate: new Date().toISOString()
+    };
+    
+    const jsonBlob = new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' });
+    const jsonUrl = URL.createObjectURL(jsonBlob);
+    const jsonLink = document.createElement('a');
+    jsonLink.href = jsonUrl;
+    jsonLink.download = recordedFileName.replace('.webm', '-metadata.json');
+    document.body.appendChild(jsonLink);
+    jsonLink.click();
+    document.body.removeChild(jsonLink);
+    URL.revokeObjectURL(jsonUrl);
+    
+    toast({
+      title: "Esportazione completata",
+      description: `Video, capitoli WebVTT e metadati esportati con successo`
+    });
   };
   const handleScoreChange = (team: 'home' | 'away', increment: boolean) => {
     const preset = SPORT_PRESETS[selectedSport];
@@ -294,6 +395,15 @@ const Record = () => {
               <Circle className="w-8 h-8 mr-2 fill-white/20 text-white/20" />
               <span className="text-white font-semibold text-lg">Live</span>
             </Button>
+            {!isRecording && recordedVideoBlob && highlights.length > 0 && (
+              <Button 
+                onClick={handleExportVideo} 
+                className="h-14 px-4 rounded-2xl border-2 bg-primary/90 border-primary backdrop-blur-sm"
+              >
+                <Download className="w-6 h-6 mr-2" />
+                <span className="text-white font-semibold text-lg">Esporta</span>
+              </Button>
+            )}
           </div>
 
           {/* Logo */}
