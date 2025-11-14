@@ -21,13 +21,15 @@ export const useTeamConfig = () => {
     }
   };
 
-  const saveConfig = (homeTeam: string, awayTeam: string, sport: SportType) => {
+  const saveConfig = (homeTeam: string, awayTeam: string, sport: SportType, homeLogo?: string, awayLogo?: string) => {
     const newConfig: TeamConfig = {
       id: Date.now().toString(),
       name: `${homeTeam} vs ${awayTeam}`,
       homeTeam,
       awayTeam,
       sport,
+      homeLogo,
+      awayLogo,
       createdAt: Date.now(),
     };
 
