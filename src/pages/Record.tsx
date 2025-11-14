@@ -30,6 +30,10 @@ const Record = () => {
   const [tempAwayTeamName, setTempAwayTeamName] = useState("TOR3TESTE");
   const [selectedSport, setSelectedSport] = useState<SportType>('calcio');
   const [currentPeriod, setCurrentPeriod] = useState(1);
+  const [homeLogo, setHomeLogo] = useState<string>("");
+  const [awayLogo, setAwayLogo] = useState<string>("");
+  const [tempHomeLogo, setTempHomeLogo] = useState<string>("");
+  const [tempAwayLogo, setTempAwayLogo] = useState<string>("");
   const {
     toast
   } = useToast();
@@ -71,13 +75,28 @@ const Record = () => {
       setShowTeamDialog(true);
     }
   };
+  const handleLogoUpload = (file: File, team: 'home' | 'away') => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      if (team === 'home') {
+        setTempHomeLogo(base64String);
+      } else {
+        setTempAwayLogo(base64String);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleStartRecordingWithTeams = async () => {
     setHomeTeamName(tempHomeTeamName);
     setAwayTeamName(tempAwayTeamName);
+    setHomeLogo(tempHomeLogo);
+    setAwayLogo(tempAwayLogo);
     setShowTeamDialog(false);
 
     // Save configuration
-    saveConfig(tempHomeTeamName, tempAwayTeamName, selectedSport);
+    saveConfig(tempHomeTeamName, tempAwayTeamName, selectedSport, tempHomeLogo, tempAwayLogo);
 
     // Apply sport preset
     const preset = SPORT_PRESETS[selectedSport];
@@ -95,11 +114,15 @@ const Record = () => {
   const handleEditTeams = () => {
     setTempHomeTeamName(homeTeamName);
     setTempAwayTeamName(awayTeamName);
+    setTempHomeLogo(homeLogo);
+    setTempAwayLogo(awayLogo);
     setShowEditDialog(true);
   };
   const handleSaveEditedTeams = () => {
     setHomeTeamName(tempHomeTeamName);
     setAwayTeamName(tempAwayTeamName);
+    setHomeLogo(tempHomeLogo);
+    setAwayLogo(tempAwayLogo);
     setShowEditDialog(false);
     toast({
       title: "Nomi squadre aggiornati"
@@ -111,6 +134,8 @@ const Record = () => {
       setTempHomeTeamName(config.homeTeam);
       setTempAwayTeamName(config.awayTeam);
       setSelectedSport(config.sport);
+      setTempHomeLogo(config.homeLogo || "");
+      setTempAwayLogo(config.awayLogo || "");
       toast({
         title: "Configurazione caricata",
         description: `${config.homeTeam} vs ${config.awayTeam}`
@@ -198,10 +223,16 @@ const Record = () => {
             <div className="grid gap-2">
               <Label htmlFor="home-team">Squadra Casa</Label>
               <Input id="home-team" value={tempHomeTeamName} onChange={e => setTempHomeTeamName(e.target.value)} placeholder="Nome squadra casa" />
+              <Label htmlFor="home-logo" className="text-sm text-muted-foreground">Logo Squadra Casa</Label>
+              <Input id="home-logo" type="file" accept="image/*" onChange={e => e.target.files?.[0] && handleLogoUpload(e.target.files[0], 'home')} />
+              {tempHomeLogo && <img src={tempHomeLogo} alt="Home logo preview" className="w-16 h-16 rounded-lg object-cover mt-2" />}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="away-team">Squadra Ospite</Label>
               <Input id="away-team" value={tempAwayTeamName} onChange={e => setTempAwayTeamName(e.target.value)} placeholder="Nome squadra ospite" />
+              <Label htmlFor="away-logo" className="text-sm text-muted-foreground">Logo Squadra Ospite</Label>
+              <Input id="away-logo" type="file" accept="image/*" onChange={e => e.target.files?.[0] && handleLogoUpload(e.target.files[0], 'away')} />
+              {tempAwayLogo && <img src={tempAwayLogo} alt="Away logo preview" className="w-16 h-16 rounded-lg object-cover mt-2" />}
             </div>
           </div>
           <DialogFooter>
@@ -225,10 +256,16 @@ const Record = () => {
             <div className="grid gap-2">
               <Label htmlFor="edit-home-team">Squadra Casa</Label>
               <Input id="edit-home-team" value={tempHomeTeamName} onChange={e => setTempHomeTeamName(e.target.value)} placeholder="Nome squadra casa" />
+              <Label htmlFor="edit-home-logo" className="text-sm text-muted-foreground">Logo Squadra Casa</Label>
+              <Input id="edit-home-logo" type="file" accept="image/*" onChange={e => e.target.files?.[0] && handleLogoUpload(e.target.files[0], 'home')} />
+              {tempHomeLogo && <img src={tempHomeLogo} alt="Home logo preview" className="w-16 h-16 rounded-lg object-cover mt-2" />}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="edit-away-team">Squadra Ospite</Label>
               <Input id="edit-away-team" value={tempAwayTeamName} onChange={e => setTempAwayTeamName(e.target.value)} placeholder="Nome squadra ospite" />
+              <Label htmlFor="edit-away-logo" className="text-sm text-muted-foreground">Logo Squadra Ospite</Label>
+              <Input id="edit-away-logo" type="file" accept="image/*" onChange={e => e.target.files?.[0] && handleLogoUpload(e.target.files[0], 'away')} />
+              {tempAwayLogo && <img src={tempAwayLogo} alt="Away logo preview" className="w-16 h-16 rounded-lg object-cover mt-2" />}
             </div>
           </div>
           <DialogFooter>
@@ -241,7 +278,7 @@ const Record = () => {
       </Dialog>
 
       {/* Mobile Sidebar */}
-      <MobileSidebar onToggleHighlights={() => setShowHighlights(!showHighlights)} onToggleScoreboard={() => setShowScoreboard(!showScoreboard)} className="my-0 px-0 py-[100px]" />
+      <MobileSidebar onToggleHighlights={() => setShowHighlights(!showHighlights)} onToggleScoreboard={() => setShowScoreboard(!showScoreboard)} />
       
       {/* Main Content Area */}
       <div className="fixed inset-0 right-20 flex flex-col">
@@ -290,7 +327,7 @@ const Record = () => {
           <video ref={videoRef} autoPlay playsInline muted={isMuted} className="absolute inset-0 w-full h-full object-cover" />
           
           {/* Scoreboard Overlay */}
-          {showScoreboard && <Scoreboard homeTeam={homeTeamName} awayTeam={awayTeamName} homeScore={homeScore} awayScore={awayScore} minutes={Math.floor(gameTime / 60)} seconds={gameTime % 60} />}
+          {showScoreboard && <Scoreboard homeTeam={homeTeamName} awayTeam={awayTeamName} homeScore={homeScore} awayScore={awayScore} minutes={Math.floor(gameTime / 60)} seconds={gameTime % 60} homeLogo={homeLogo} awayLogo={awayLogo} />}
 
           {/* Zoom Controls - Right Side */}
           <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-3">
@@ -318,6 +355,7 @@ const Record = () => {
             {/* Home Team */}
             <div className="flex flex-col items-center gap-3">
               <div className="flex items-center gap-2">
+                {homeLogo && <img src={homeLogo} alt={homeTeamName} className="w-8 h-8 rounded-full object-cover" />}
                 <span className="text-white text-base font-semibold">{homeTeamName}</span>
                 {isRecording && <Button size="icon" variant="ghost" className="h-6 w-6 text-white/60 hover:text-white" onClick={handleEditTeams}>
                     <Edit2 className="w-4 h-4" />
@@ -357,6 +395,7 @@ const Record = () => {
             {/* Away Team */}
             <div className="flex flex-col items-center gap-3">
               <div className="flex items-center gap-2">
+                {awayLogo && <img src={awayLogo} alt={awayTeamName} className="w-8 h-8 rounded-full object-cover" />}
                 <span className="text-white text-base font-semibold">{awayTeamName}</span>
                 {isRecording && <Button size="icon" variant="ghost" className="h-6 w-6 text-white/60 hover:text-white" onClick={handleEditTeams}>
                     <Edit2 className="w-4 h-4" />

@@ -16,6 +16,8 @@ export interface TeamConfig {
   homeTeam: string;
   awayTeam: string;
   sport: SportType;
+  homeLogo?: string;
+  awayLogo?: string;
   createdAt: number;
 }
 
