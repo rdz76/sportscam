@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Circle, Star, Volume2, VolumeX, Plus, Minus, Clock, Edit2, Save, Trash2, Download } from "lucide-react";
+import { Circle, Star, Volume2, VolumeX, Plus, Minus, Clock, Edit2, Save, Trash2, Download, Play } from "lucide-react";
 import Scoreboard from "@/components/Scoreboard";
 import { Highlight } from "@/components/HighlightsList";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SportType, SPORT_PRESETS } from "@/types/sports";
 import { useTeamConfig } from "@/hooks/useTeamConfig";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import VideoPlayer from "@/components/VideoPlayer";
 const Record = () => {
   const [showScoreboard, setShowScoreboard] = useState(true);
   const [showHighlights, setShowHighlights] = useState(true);
@@ -36,6 +37,8 @@ const Record = () => {
   const [tempAwayLogo, setTempAwayLogo] = useState<string>("");
   const [recordedVideoBlob, setRecordedVideoBlob] = useState<Blob | null>(null);
   const [recordedFileName, setRecordedFileName] = useState<string>("");
+  const [recordedVideoUrl, setRecordedVideoUrl] = useState<string>("");
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const {
     toast
   } = useToast();
@@ -72,6 +75,7 @@ const Record = () => {
       if (recordingData?.videoBlob) {
         setRecordedVideoBlob(recordingData.videoBlob);
         setRecordedFileName(recordingData.fileName);
+        setRecordedVideoUrl(recordingData.videoUrl);
       }
       toast({
         title: "Registrazione terminata",
@@ -396,13 +400,22 @@ const Record = () => {
               <span className="text-white font-semibold text-lg">Live</span>
             </Button>
             {!isRecording && recordedVideoBlob && highlights.length > 0 && (
-              <Button 
-                onClick={handleExportVideo} 
-                className="h-14 px-4 rounded-2xl border-2 bg-primary/90 border-primary backdrop-blur-sm"
-              >
-                <Download className="w-6 h-6 mr-2" />
-                <span className="text-white font-semibold text-lg">Esporta</span>
-              </Button>
+              <>
+                <Button 
+                  onClick={() => setShowVideoPlayer(true)} 
+                  className="h-14 px-4 rounded-2xl border-2 bg-accent/90 border-accent backdrop-blur-sm"
+                >
+                  <Play className="w-6 h-6 mr-2" />
+                  <span className="text-white font-semibold text-lg">Riproduci</span>
+                </Button>
+                <Button 
+                  onClick={handleExportVideo} 
+                  className="h-14 px-4 rounded-2xl border-2 bg-primary/90 border-primary backdrop-blur-sm"
+                >
+                  <Download className="w-6 h-6 mr-2" />
+                  <span className="text-white font-semibold text-lg">Esporta</span>
+                </Button>
+              </>
             )}
           </div>
 
@@ -526,6 +539,16 @@ const Record = () => {
           </div>
         </div>
       </div>
+      
+      {/* Video Player Modal */}
+      {showVideoPlayer && recordedVideoUrl && (
+        <VideoPlayer
+          videoUrl={recordedVideoUrl}
+          highlights={highlights}
+          fileName={recordedFileName}
+          onClose={() => setShowVideoPlayer(false)}
+        />
+      )}
     </div>;
 };
 export default Record;
