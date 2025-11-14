@@ -6,6 +6,7 @@ export interface RecordingData {
   videoUrl: string;
   fileName: string;
   duration: number;
+  videoBlob?: Blob;
 }
 
 export const useVideoRecorder = () => {
@@ -165,7 +166,7 @@ export const useVideoRecorder = () => {
           clearInterval(timerRef.current);
         }
 
-        resolve({ videoUrl, fileName, duration });
+        resolve({ videoUrl, fileName, duration, videoBlob: blob });
       };
 
       mediaRecorderRef.current.stop();
