@@ -42,7 +42,6 @@ const Record = () => {
   const [zoomLevel, setZoomLevel] = useState(1);
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const lastPinchDistance = useRef<number>(0);
-  
   const {
     toast
   } = useToast();
@@ -61,7 +60,6 @@ const Record = () => {
     stopRecording,
     startCamera
   } = useVideoRecorder();
-  
   useEffect(() => {
     startCamera();
   }, [startCamera]);
@@ -70,57 +68,46 @@ const Record = () => {
   useEffect(() => {
     const container = videoContainerRef.current;
     if (!container) return;
-
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
         e.preventDefault();
-        const distance = Math.hypot(
-          e.touches[0].pageX - e.touches[1].pageX,
-          e.touches[0].pageY - e.touches[1].pageY
-        );
+        const distance = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
         lastPinchDistance.current = distance;
       }
     };
-
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches.length === 2) {
         e.preventDefault();
-        const distance = Math.hypot(
-          e.touches[0].pageX - e.touches[1].pageX,
-          e.touches[0].pageY - e.touches[1].pageY
-        );
-
+        const distance = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
         if (lastPinchDistance.current > 0) {
           const delta = distance - lastPinchDistance.current;
           const zoomChange = delta * 0.01;
           setZoomLevel(prev => Math.min(Math.max(1, prev + zoomChange), 4));
         }
-
         lastPinchDistance.current = distance;
       }
     };
-
     const handleTouchEnd = (e: TouchEvent) => {
       if (e.touches.length < 2) {
         lastPinchDistance.current = 0;
       }
     };
-
-    container.addEventListener('touchstart', handleTouchStart, { passive: false });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchstart', handleTouchStart, {
+      passive: false
+    });
+    container.addEventListener('touchmove', handleTouchMove, {
+      passive: false
+    });
     container.addEventListener('touchend', handleTouchEnd);
-
     return () => {
       container.removeEventListener('touchstart', handleTouchStart);
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
     };
   }, []);
-
   const handleZoomIn = () => {
     setZoomLevel(prev => Math.min(prev + 0.5, 4));
   };
-
   const handleZoomOut = () => {
     setZoomLevel(prev => Math.max(prev - 0.5, 1));
   };
@@ -161,7 +148,6 @@ const Record = () => {
     };
     reader.readAsDataURL(file);
   };
-
   const handleStartRecordingWithTeams = async () => {
     setHomeTeamName(tempHomeTeamName);
     setAwayTeamName(tempAwayTeamName);
@@ -216,35 +202,26 @@ const Record = () => {
       });
     }
   };
-  
   const createWebVTTChapters = (highlights: Highlight[]): string => {
     let vtt = "WEBVTT\n\n";
-    
     highlights.forEach((highlight, index) => {
       const startTime = formatVTTTime(highlight.timestamp);
-      const endTime = index < highlights.length - 1 
-        ? formatVTTTime(highlights[index + 1].timestamp)
-        : formatVTTTime(highlight.timestamp + 30); // 30 seconds default duration
-      
+      const endTime = index < highlights.length - 1 ? formatVTTTime(highlights[index + 1].timestamp) : formatVTTTime(highlight.timestamp + 30); // 30 seconds default duration
+
       const chapterTitle = highlight.note || `Highlight ${index + 1}`;
-      
       vtt += `${index + 1}\n`;
       vtt += `${startTime} --> ${endTime}\n`;
       vtt += `${chapterTitle}\n\n`;
     });
-    
     return vtt;
   };
-  
   const formatVTTTime = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
+    const minutes = Math.floor(seconds % 3600 / 60);
     const secs = seconds % 60;
-    const milliseconds = Math.floor((seconds % 1) * 1000);
-    
+    const milliseconds = Math.floor(seconds % 1 * 1000);
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
   };
-  
   const handleExportVideo = () => {
     if (!recordedVideoBlob || highlights.length === 0) {
       toast({
@@ -254,7 +231,7 @@ const Record = () => {
       });
       return;
     }
-    
+
     // Export video file
     const videoUrl = URL.createObjectURL(recordedVideoBlob);
     const videoLink = document.createElement('a');
@@ -264,10 +241,12 @@ const Record = () => {
     videoLink.click();
     document.body.removeChild(videoLink);
     URL.revokeObjectURL(videoUrl);
-    
+
     // Export WebVTT chapters file
     const vttContent = createWebVTTChapters(highlights);
-    const vttBlob = new Blob([vttContent], { type: 'text/vtt' });
+    const vttBlob = new Blob([vttContent], {
+      type: 'text/vtt'
+    });
     const vttUrl = URL.createObjectURL(vttBlob);
     const vttLink = document.createElement('a');
     vttLink.href = vttUrl;
@@ -276,7 +255,7 @@ const Record = () => {
     vttLink.click();
     document.body.removeChild(vttLink);
     URL.revokeObjectURL(vttUrl);
-    
+
     // Export JSON metadata file
     const metadata = {
       fileName: recordedFileName,
@@ -295,8 +274,9 @@ const Record = () => {
       })),
       exportDate: new Date().toISOString()
     };
-    
-    const jsonBlob = new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' });
+    const jsonBlob = new Blob([JSON.stringify(metadata, null, 2)], {
+      type: 'application/json'
+    });
     const jsonUrl = URL.createObjectURL(jsonBlob);
     const jsonLink = document.createElement('a');
     jsonLink.href = jsonUrl;
@@ -305,7 +285,6 @@ const Record = () => {
     jsonLink.click();
     document.body.removeChild(jsonLink);
     URL.revokeObjectURL(jsonUrl);
-    
     toast({
       title: "Esportazione completata",
       description: `Video, capitoli WebVTT e metadati esportati con successo`
@@ -447,14 +426,14 @@ const Record = () => {
       </Dialog>
 
       {/* Mobile Sidebar */}
-      <MobileSidebar onToggleHighlights={() => setShowHighlights(!showHighlights)} onToggleScoreboard={() => setShowScoreboard(!showScoreboard)} />
+      <MobileSidebar onToggleHighlights={() => setShowHighlights(!showHighlights)} onToggleScoreboard={() => setShowScoreboard(!showScoreboard)} className="bg-stone-800" />
       
       {/* Main Content Area */}
       <div className="fixed inset-0 right-20 flex flex-col">
         {/* Top Left Controls */}
         <div className="absolute top-4 left-4 z-20 flex flex-col gap-3">
           {/* Rec/Live Toggle Buttons */}
-          <div className="flex gap-2 my-[50px]">
+          <div className="flex gap-2 my-0">
             <Button onClick={handleRecord} className={`h-14 px-4 rounded-2xl border-2 ${isRecording ? "bg-black/80 border-primary" : "bg-black/60 border-white/20"} backdrop-blur-sm`}>
               <Circle className={`w-8 h-8 mr-2 ${isRecording ? "fill-primary text-primary" : "fill-white/20 text-white/20"}`} />
               <span className="text-white font-semibold text-lg">Rec.</span>
@@ -463,24 +442,16 @@ const Record = () => {
               <Circle className="w-8 h-8 mr-2 fill-white/20 text-white/20" />
               <span className="text-white font-semibold text-lg">Live</span>
             </Button>
-            {!isRecording && recordedVideoBlob && highlights.length > 0 && (
-              <>
-                <Button 
-                  onClick={() => setShowVideoPlayer(true)} 
-                  className="h-14 px-4 rounded-2xl border-2 bg-accent/90 border-accent backdrop-blur-sm"
-                >
+            {!isRecording && recordedVideoBlob && highlights.length > 0 && <>
+                <Button onClick={() => setShowVideoPlayer(true)} className="h-14 px-4 rounded-2xl border-2 bg-accent/90 border-accent backdrop-blur-sm">
                   <Play className="w-6 h-6 mr-2" />
                   <span className="text-white font-semibold text-lg">Riproduci</span>
                 </Button>
-                <Button 
-                  onClick={handleExportVideo} 
-                  className="h-14 px-4 rounded-2xl border-2 bg-primary/90 border-primary backdrop-blur-sm"
-                >
+                <Button onClick={handleExportVideo} className="h-14 px-4 rounded-2xl border-2 bg-primary/90 border-primary backdrop-blur-sm">
                   <Download className="w-6 h-6 mr-2" />
                   <span className="text-white font-semibold text-lg">Esporta</span>
                 </Button>
-              </>
-            )}
+              </>}
           </div>
 
           {/* Logo */}
@@ -511,26 +482,16 @@ const Record = () => {
 
         {/* Video Preview - Full Screen */}
         <div ref={videoContainerRef} className="relative flex-1 bg-black overflow-hidden touch-none">
-          <video 
-            ref={videoRef} 
-            autoPlay 
-            playsInline 
-            muted={isMuted} 
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-200"
-            style={{ transform: `scale(${zoomLevel})` }}
-          />
+          <video ref={videoRef} autoPlay playsInline muted={isMuted} className="absolute inset-0 w-full h-full object-cover transition-transform duration-200" style={{
+          transform: `scale(${zoomLevel})`
+        }} />
           
           {/* Scoreboard Overlay */}
           {showScoreboard && <Scoreboard homeTeam={homeTeamName} awayTeam={awayTeamName} homeScore={homeScore} awayScore={awayScore} minutes={Math.floor(gameTime / 60)} seconds={gameTime % 60} homeLogo={homeLogo} awayLogo={awayLogo} />}
 
           {/* Zoom Controls - Right Side */}
           <div className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 md:gap-3 z-10">
-            <Button 
-              size="icon" 
-              onClick={handleZoomIn}
-              disabled={zoomLevel >= 4}
-              className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-muted/80 hover:bg-muted text-foreground backdrop-blur-sm disabled:opacity-50"
-            >
+            <Button size="icon" onClick={handleZoomIn} disabled={zoomLevel >= 4} className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-muted/80 hover:bg-muted text-foreground backdrop-blur-sm disabled:opacity-50">
               <Plus className="w-5 h-5 md:w-8 md:h-8" />
             </Button>
             <div className="w-10 md:w-16 rounded-xl md:rounded-2xl bg-muted/80 backdrop-blur-sm p-2 md:p-4 flex items-center justify-center">
@@ -538,18 +499,12 @@ const Record = () => {
             </div>
             <div className="w-10 md:w-16 h-24 md:h-40 bg-muted/80 backdrop-blur-sm rounded-xl md:rounded-2xl flex items-center justify-center p-1.5 md:p-2">
               <div className="h-full w-1.5 md:w-2 bg-border rounded-full relative">
-                <div 
-                  className="absolute left-1/2 -translate-x-1/2 w-3 md:w-4 h-6 md:h-10 bg-foreground rounded-full transition-all"
-                  style={{ bottom: `${((zoomLevel - 1) / 3) * 100}%` }}
-                />
+                <div className="absolute left-1/2 -translate-x-1/2 w-3 md:w-4 h-6 md:h-10 bg-foreground rounded-full transition-all" style={{
+                bottom: `${(zoomLevel - 1) / 3 * 100}%`
+              }} />
               </div>
             </div>
-            <Button 
-              size="icon" 
-              onClick={handleZoomOut}
-              disabled={zoomLevel <= 1}
-              className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-muted/80 hover:bg-muted text-foreground backdrop-blur-sm disabled:opacity-50"
-            >
+            <Button size="icon" onClick={handleZoomOut} disabled={zoomLevel <= 1} className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-muted/80 hover:bg-muted text-foreground backdrop-blur-sm disabled:opacity-50">
               <Minus className="w-5 h-5 md:w-8 md:h-8" />
             </Button>
           </div>
@@ -625,15 +580,7 @@ const Record = () => {
       </div>
       
       {/* Video Player Modal */}
-{showVideoPlayer && recordedVideoUrl && (
-  <VideoPlayer
-    videoUrl={recordedVideoUrl}
-    highlights={highlights}
-    fileName={recordedFileName}
-    videoBlob={recordedVideoBlob || undefined}
-    onClose={() => setShowVideoPlayer(false)}
-  />
-)}
+    {showVideoPlayer && recordedVideoUrl && <VideoPlayer videoUrl={recordedVideoUrl} highlights={highlights} fileName={recordedFileName} videoBlob={recordedVideoBlob || undefined} onClose={() => setShowVideoPlayer(false)} />}
     </div>;
 };
 export default Record;
