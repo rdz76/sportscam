@@ -541,14 +541,15 @@ const Record = () => {
       </div>
       
       {/* Video Player Modal */}
-      {showVideoPlayer && recordedVideoUrl && (
-        <VideoPlayer
-          videoUrl={recordedVideoUrl}
-          highlights={highlights}
-          fileName={recordedFileName}
-          onClose={() => setShowVideoPlayer(false)}
-        />
-      )}
+{showVideoPlayer && recordedVideoUrl && (
+  <VideoPlayer
+    videoUrl={recordedVideoUrl}
+    highlights={highlights}
+    fileName={recordedFileName}
+    videoBlob={recordedVideoBlob || undefined}
+    onClose={() => setShowVideoPlayer(false)}
+  />
+)}
     </div>;
 };
 export default Record;
