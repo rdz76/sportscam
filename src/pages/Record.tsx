@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Circle, Star, Volume2, VolumeX, Plus, Minus, Clock, Edit2, Save, Trash2, Download, Play } from "lucide-react";
 import Scoreboard from "@/components/Scoreboard";
@@ -39,6 +39,10 @@ const Record = () => {
   const [recordedFileName, setRecordedFileName] = useState<string>("");
   const [recordedVideoUrl, setRecordedVideoUrl] = useState<string>("");
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+  const lastPinchDistance = useRef<number>(0);
+  
   const {
     toast
   } = useToast();
@@ -57,9 +61,69 @@ const Record = () => {
     stopRecording,
     startCamera
   } = useVideoRecorder();
+  
   useEffect(() => {
     startCamera();
   }, [startCamera]);
+
+  // Pinch-to-zoom gesture handling
+  useEffect(() => {
+    const container = videoContainerRef.current;
+    if (!container) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const distance = Math.hypot(
+          e.touches[0].pageX - e.touches[1].pageX,
+          e.touches[0].pageY - e.touches[1].pageY
+        );
+        lastPinchDistance.current = distance;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const distance = Math.hypot(
+          e.touches[0].pageX - e.touches[1].pageX,
+          e.touches[0].pageY - e.touches[1].pageY
+        );
+
+        if (lastPinchDistance.current > 0) {
+          const delta = distance - lastPinchDistance.current;
+          const zoomChange = delta * 0.01;
+          setZoomLevel(prev => Math.min(Math.max(1, prev + zoomChange), 4));
+        }
+
+        lastPinchDistance.current = distance;
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        lastPinchDistance.current = 0;
+      }
+    };
+
+    container.addEventListener('touchstart', handleTouchStart, { passive: false });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, []);
+
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.5, 4));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 0.5, 1));
+  };
   const formatTime = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor(seconds % 3600 / 60);
@@ -446,26 +510,46 @@ const Record = () => {
         </div>
 
         {/* Video Preview - Full Screen */}
-        <div className="relative flex-1 bg-black">
-          <video ref={videoRef} autoPlay playsInline muted={isMuted} className="absolute inset-0 w-full h-full object-cover" />
+        <div ref={videoContainerRef} className="relative flex-1 bg-black overflow-hidden touch-none">
+          <video 
+            ref={videoRef} 
+            autoPlay 
+            playsInline 
+            muted={isMuted} 
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-200"
+            style={{ transform: `scale(${zoomLevel})` }}
+          />
           
           {/* Scoreboard Overlay */}
           {showScoreboard && <Scoreboard homeTeam={homeTeamName} awayTeam={awayTeamName} homeScore={homeScore} awayScore={awayScore} minutes={Math.floor(gameTime / 60)} seconds={gameTime % 60} homeLogo={homeLogo} awayLogo={awayLogo} />}
 
           {/* Zoom Controls - Right Side */}
-          <div className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 md:gap-3">
-            <Button size="icon" className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-muted/80 hover:bg-muted text-foreground backdrop-blur-sm">
+          <div className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 md:gap-3 z-10">
+            <Button 
+              size="icon" 
+              onClick={handleZoomIn}
+              disabled={zoomLevel >= 4}
+              className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-muted/80 hover:bg-muted text-foreground backdrop-blur-sm disabled:opacity-50"
+            >
               <Plus className="w-5 h-5 md:w-8 md:h-8" />
             </Button>
             <div className="w-10 md:w-16 rounded-xl md:rounded-2xl bg-muted/80 backdrop-blur-sm p-2 md:p-4 flex items-center justify-center">
-              <div className="text-white font-semibold text-xs md:text-base">Zoom</div>
+              <div className="text-white font-semibold text-xs md:text-base">{zoomLevel.toFixed(1)}x</div>
             </div>
             <div className="w-10 md:w-16 h-24 md:h-40 bg-muted/80 backdrop-blur-sm rounded-xl md:rounded-2xl flex items-center justify-center p-1.5 md:p-2">
               <div className="h-full w-1.5 md:w-2 bg-border rounded-full relative">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 md:w-4 h-6 md:h-10 bg-foreground rounded-full" />
+                <div 
+                  className="absolute left-1/2 -translate-x-1/2 w-3 md:w-4 h-6 md:h-10 bg-foreground rounded-full transition-all"
+                  style={{ bottom: `${((zoomLevel - 1) / 3) * 100}%` }}
+                />
               </div>
             </div>
-            <Button size="icon" className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-muted/80 hover:bg-muted text-foreground backdrop-blur-sm">
+            <Button 
+              size="icon" 
+              onClick={handleZoomOut}
+              disabled={zoomLevel <= 1}
+              className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-muted/80 hover:bg-muted text-foreground backdrop-blur-sm disabled:opacity-50"
+            >
               <Minus className="w-5 h-5 md:w-8 md:h-8" />
             </Button>
           </div>
