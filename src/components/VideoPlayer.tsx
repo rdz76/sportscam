@@ -2,18 +2,22 @@ import { useRef, useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Slider } from "./ui/slider";
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward, X } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward, X, Edit } from "lucide-react";
 import { Highlight } from "./HighlightsList";
 import HighlightsTimeline from "./HighlightsTimeline";
+import VideoEditorControls from "./VideoEditorControls";
+import { useVideoEditor } from "@/hooks/useVideoEditor";
+import { toast } from "sonner";
 
 interface VideoPlayerProps {
   videoUrl: string;
   highlights: Highlight[];
   fileName: string;
+  videoBlob?: Blob;
   onClose?: () => void;
 }
 
-const VideoPlayer = ({ videoUrl, highlights, fileName, onClose }: VideoPlayerProps) => {
+const VideoPlayer = ({ videoUrl, highlights, fileName, videoBlob, onClose }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -23,6 +27,19 @@ const VideoPlayer = ({ videoUrl, highlights, fileName, onClose }: VideoPlayerPro
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [showEditor, setShowEditor] = useState(false);
+
+  const {
+    isProcessing,
+    progress,
+    cutRanges,
+    isLoaded: isEditorLoaded,
+    loadFFmpeg,
+    addCutRange,
+    removeCutRange,
+    clearCutRanges,
+    processVideo,
+  } = useVideoEditor();
 
   useEffect(() => {
     const video = videoRef.current;
@@ -115,6 +132,29 @@ const VideoPlayer = ({ videoUrl, highlights, fileName, onClose }: VideoPlayerPro
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${String(secs).padStart(2, '0')}`;
+  };
+
+  const handleProcessVideo = async () => {
+    if (!videoBlob) {
+      toast.error("Video blob non disponibile");
+      return;
+    }
+
+    const processedBlob = await processVideo(videoBlob, duration);
+    
+    if (processedBlob) {
+      // Crea un URL per il download
+      const url = URL.createObjectURL(processedBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `edited_${fileName}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      clearCutRanges();
+    }
   };
 
   return (
@@ -213,6 +253,17 @@ const VideoPlayer = ({ videoUrl, highlights, fileName, onClose }: VideoPlayerPro
 
               <div className="flex items-center gap-2">
                 <span className="text-xs text-white/60 mr-2">{fileName}</span>
+                {videoBlob && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setShowEditor(!showEditor)}
+                    className="text-white hover:bg-white/20"
+                    title="Editor Video"
+                  >
+                    <Edit className="w-5 h-5" />
+                  </Button>
+                )}
                 <Button
                   size="icon"
                   variant="ghost"
@@ -233,6 +284,23 @@ const VideoPlayer = ({ videoUrl, highlights, fileName, onClose }: VideoPlayerPro
           duration={duration}
           onSeek={handleSeek}
         />
+
+        {/* Video Editor Controls */}
+        {showEditor && videoBlob && (
+          <VideoEditorControls
+            currentTime={currentTime}
+            duration={duration}
+            cutRanges={cutRanges}
+            isProcessing={isProcessing}
+            progress={progress}
+            isEditorLoaded={isEditorLoaded}
+            onLoadEditor={loadFFmpeg}
+            onAddCutRange={addCutRange}
+            onRemoveCutRange={removeCutRange}
+            onClearRanges={clearCutRanges}
+            onProcessVideo={handleProcessVideo}
+          />
+        )}
       </div>
     </div>
   );
