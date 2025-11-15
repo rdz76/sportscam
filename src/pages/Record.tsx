@@ -453,20 +453,20 @@ const Record = () => {
           {showScoreboard && <Scoreboard homeTeam={homeTeamName} awayTeam={awayTeamName} homeScore={homeScore} awayScore={awayScore} minutes={Math.floor(gameTime / 60)} seconds={gameTime % 60} homeLogo={homeLogo} awayLogo={awayLogo} />}
 
           {/* Zoom Controls - Right Side */}
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-3">
-            <Button size="icon" className="w-16 h-16 rounded-2xl bg-muted/80 hover:bg-muted text-foreground backdrop-blur-sm">
-              <Plus className="w-8 h-8" />
+          <div className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 md:gap-3">
+            <Button size="icon" className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-muted/80 hover:bg-muted text-foreground backdrop-blur-sm">
+              <Plus className="w-5 h-5 md:w-8 md:h-8" />
             </Button>
-            <div className="w-16 rounded-2xl bg-muted/80 backdrop-blur-sm p-4 flex items-center justify-center">
-              <div className="text-white font-semibold">Zoom</div>
+            <div className="w-10 md:w-16 rounded-xl md:rounded-2xl bg-muted/80 backdrop-blur-sm p-2 md:p-4 flex items-center justify-center">
+              <div className="text-white font-semibold text-xs md:text-base">Zoom</div>
             </div>
-            <div className="w-16 h-40 bg-muted/80 backdrop-blur-sm rounded-2xl flex items-center justify-center p-2">
-              <div className="h-full w-2 bg-border rounded-full relative">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-10 bg-foreground rounded-full" />
+            <div className="w-10 md:w-16 h-24 md:h-40 bg-muted/80 backdrop-blur-sm rounded-xl md:rounded-2xl flex items-center justify-center p-1.5 md:p-2">
+              <div className="h-full w-1.5 md:w-2 bg-border rounded-full relative">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 md:w-4 h-6 md:h-10 bg-foreground rounded-full" />
               </div>
             </div>
-            <Button size="icon" className="w-16 h-16 rounded-2xl bg-muted/80 hover:bg-muted text-foreground backdrop-blur-sm">
-              <Minus className="w-8 h-8" />
+            <Button size="icon" className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-muted/80 hover:bg-muted text-foreground backdrop-blur-sm">
+              <Minus className="w-5 h-5 md:w-8 md:h-8" />
             </Button>
           </div>
         </div>
@@ -474,65 +474,65 @@ const Record = () => {
         {/* Bottom Controls Panel */}
         <div className="bg-black pb-safe">
           {/* Scoreboard Controls */}
-          <div className="flex items-center justify-center gap-8 py-6">
+          <div className="flex items-center justify-center gap-2 md:gap-8 py-2 md:py-6 px-2">
             {/* Home Team */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="flex items-center gap-2">
-                {homeLogo && <img src={homeLogo} alt={homeTeamName} className="w-8 h-8 rounded-full object-cover" />}
-                <span className="text-white text-base font-semibold">{homeTeamName}</span>
-                {isRecording && <Button size="icon" variant="ghost" className="h-6 w-6 text-white/60 hover:text-white" onClick={handleEditTeams}>
-                    <Edit2 className="w-4 h-4" />
+            <div className="flex flex-col items-center gap-1 md:gap-3">
+              <div className="flex items-center gap-1 md:gap-2">
+                {homeLogo && <img src={homeLogo} alt={homeTeamName} className="w-5 h-5 md:w-8 md:h-8 rounded-full object-cover" />}
+                <span className="text-white text-xs md:text-base font-semibold truncate max-w-[60px] md:max-w-none">{homeTeamName}</span>
+                {isRecording && <Button size="icon" variant="ghost" className="h-5 w-5 md:h-6 md:w-6 text-white/60 hover:text-white" onClick={handleEditTeams}>
+                    <Edit2 className="w-3 h-3 md:w-4 md:h-4" />
                   </Button>}
               </div>
-              <div className="flex items-center gap-3">
-                <Button size="icon" onClick={() => handleScoreChange('home', false)} className="w-14 h-14 rounded-full bg-muted/80 hover:bg-muted text-foreground">
-                  <Minus className="w-6 h-6" />
+              <div className="flex items-center gap-1 md:gap-3">
+                <Button size="icon" onClick={() => handleScoreChange('home', false)} className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-muted/80 hover:bg-muted text-foreground">
+                  <Minus className="w-4 h-4 md:w-6 md:h-6" />
                 </Button>
-                <div className="text-white text-5xl font-bold w-20 text-center">
+                <div className="text-white text-3xl md:text-5xl font-bold w-12 md:w-20 text-center">
                   {homeScore}
                 </div>
-                <Button size="icon" onClick={() => handleScoreChange('home', true)} className="w-24 h-24 rounded-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30 text-slate-50">
-                  <Plus className="w-12 h-12" />
+                <Button size="icon" onClick={() => handleScoreChange('home', true)} className="w-14 h-14 md:w-24 md:h-24 rounded-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30 text-slate-50">
+                  <Plus className="w-7 h-7 md:w-12 md:h-12" />
                 </Button>
               </div>
             </div>
 
             {/* Game Timer */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="text-white text-5xl font-bold font-mono">
+            <div className="flex flex-col items-center gap-1 md:gap-3">
+              <div className="text-white text-2xl md:text-5xl font-bold font-mono">
                 {Math.floor(gameTime / 60)}:{String(gameTime % 60).padStart(2, '0')}
               </div>
-              <div className="flex items-center gap-2">
-                <Button size="sm" onClick={() => setGameTime(Math.max(0, gameTime - 1))} className="h-10 px-4 rounded-full bg-muted/80 hover:bg-muted text-foreground text-sm font-semibold">
+              <div className="flex items-center gap-1 md:gap-2">
+                <Button size="sm" onClick={() => setGameTime(Math.max(0, gameTime - 1))} className="h-7 md:h-10 px-2 md:px-4 rounded-full bg-muted/80 hover:bg-muted text-foreground text-xs md:text-sm font-semibold">
                   -1s
                 </Button>
-                <Button size="icon" className="w-20 h-20 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30">
-                  <Clock className="w-8 h-8" />
+                <Button size="icon" className="w-12 h-12 md:w-20 md:h-20 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30">
+                  <Clock className="w-5 h-5 md:w-8 md:h-8" />
                 </Button>
-                <Button size="sm" onClick={() => setGameTime(gameTime + 1)} className="h-10 px-4 rounded-full bg-muted/80 hover:bg-muted text-foreground text-sm font-semibold">
+                <Button size="sm" onClick={() => setGameTime(gameTime + 1)} className="h-7 md:h-10 px-2 md:px-4 rounded-full bg-muted/80 hover:bg-muted text-foreground text-xs md:text-sm font-semibold">
                   +1s
                 </Button>
               </div>
             </div>
 
             {/* Away Team */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="flex items-center gap-2">
-                {awayLogo && <img src={awayLogo} alt={awayTeamName} className="w-8 h-8 rounded-full object-cover" />}
-                <span className="text-white text-base font-semibold">{awayTeamName}</span>
-                {isRecording && <Button size="icon" variant="ghost" className="h-6 w-6 text-white/60 hover:text-white" onClick={handleEditTeams}>
-                    <Edit2 className="w-4 h-4" />
+            <div className="flex flex-col items-center gap-1 md:gap-3">
+              <div className="flex items-center gap-1 md:gap-2">
+                {awayLogo && <img src={awayLogo} alt={awayTeamName} className="w-5 h-5 md:w-8 md:h-8 rounded-full object-cover" />}
+                <span className="text-white text-xs md:text-base font-semibold truncate max-w-[60px] md:max-w-none">{awayTeamName}</span>
+                {isRecording && <Button size="icon" variant="ghost" className="h-5 w-5 md:h-6 md:w-6 text-white/60 hover:text-white" onClick={handleEditTeams}>
+                    <Edit2 className="w-3 h-3 md:w-4 md:h-4" />
                   </Button>}
               </div>
-              <div className="flex items-center gap-3">
-                <Button size="icon" onClick={() => handleScoreChange('away', true)} className="w-24 h-24 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30">
-                  <Plus className="w-12 h-12" />
+              <div className="flex items-center gap-1 md:gap-3">
+                <Button size="icon" onClick={() => handleScoreChange('away', true)} className="w-14 h-14 md:w-24 md:h-24 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30">
+                  <Plus className="w-7 h-7 md:w-12 md:h-12" />
                 </Button>
-                <div className="text-white text-5xl font-bold w-20 text-center">
+                <div className="text-white text-3xl md:text-5xl font-bold w-12 md:w-20 text-center">
                   {awayScore}
                 </div>
-                <Button size="icon" onClick={() => handleScoreChange('away', false)} className="w-14 h-14 rounded-full bg-muted/80 hover:bg-muted text-foreground">
-                  <Minus className="w-6 h-6" />
+                <Button size="icon" onClick={() => handleScoreChange('away', false)} className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-muted/80 hover:bg-muted text-foreground">
+                  <Minus className="w-4 h-4 md:w-6 md:h-6" />
                 </Button>
               </div>
             </div>
